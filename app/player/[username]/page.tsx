@@ -4,27 +4,34 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
 async function getPlayerData(username: string) {
-  const player = await prisma.player.findUnique({
+  const player = await prisma.players.findUnique({
     where: { username },
     include: {
       reports: {
         include: {
-          hero: true,
+          heroes: true,
+          players: true,
         },
       },
       lord_reports: {
         include: {
-          hero: true,
+          heroes: true,
         },
       },
     },
-  })
+  });
+  
 
   if (!player) return null
 
-  const heroStats = await prisma.playerHeroStats.findMany({
-    where: { player_id: player.player_id },
-  })
+  const heroStats = await prisma.$queryRaw<
+  Array<{ hero_id: number; total_reports: bigint; avg_rating: number; lord_reports: bigint; lord_status: string }>
+>`
+  SELECT hero_id, total_reports, avg_rating, lord_reports, lord_status 
+  FROM player_hero_stats 
+  WHERE player_id = ${player.player_id}
+`;
+
 
   return { player, heroStats }
 }
