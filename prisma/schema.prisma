@@ -9,14 +9,49 @@ datasource db {
 }
 
 model Player {
-  id           Int      @id @default(autoincrement())
-  username     String   @unique
-  level        Int
-  mainHero     String
-  winRate      Float
-  totalMatches Int
-  rank         String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  player_id    Int           @id @default(autoincrement())
+  username     String        @unique
+  reports      Report[]
+  lord_reports LordReport[]
+}
+
+model Hero {
+  hero_id      Int           @id @default(autoincrement())
+  hero_name    String        @unique
+  reports      Report[]
+  lord_reports LordReport[]
+}
+
+model Report {
+  report_id   Int      @id @default(autoincrement())
+  player      Player   @relation(fields: [player_id], references: [player_id], onDelete: Cascade)
+  player_id   Int
+  hero        Hero     @relation(fields: [hero_id], references: [hero_id], onDelete: Cascade)
+  hero_id     Int
+  rating      Int
+  comment     String?
+  reported_at DateTime @default(now())
+  user_ip     String   @db.VarChar(45)
+}
+
+model LordReport {
+  lord_report_id Int      @id @default(autoincrement())
+  player         Player   @relation(fields: [player_id], references: [player_id], onDelete: Cascade)
+  player_id      Int
+  hero           Hero     @relation(fields: [hero_id], references: [hero_id], onDelete: Cascade)
+  hero_id        Int
+  user_ip        String   @db.VarChar(45)
+  reported_at    DateTime @default(now())
+}
+
+view PlayerHeroStats {
+  player_id     Int
+  hero_id       Int
+  total_reports Int
+  avg_rating    Float    @default(0)
+  lord_reports  Int
+  lord_status   String
+
+  @@unique([player_id, hero_id])
 }
 
