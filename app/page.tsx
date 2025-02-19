@@ -1,7 +1,6 @@
 import Link from "next/link"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
 import { prisma } from "@/lib/prisma"
+import SearchBar from "@/components/SearchBar"
 
 type TopPlayer = {
   player_id: number
@@ -9,7 +8,7 @@ type TopPlayer = {
   avg_rating: number
 }
 
-// Utility function to get top players
+// Utility function to get top players (remains server-side)
 async function getTopPlayers(limit = 5): Promise<TopPlayer[]> {
   const topPlayers = await prisma.$queryRaw<TopPlayer[]>`
     SELECT p.player_id,
@@ -30,22 +29,9 @@ export default async function Home() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-24 bg-gradient-to-b from-gray-900 to-gray-800">
-      {/* Search Form */}
-      <h1 className="text-4xl font-bold mb-8 text-red-500">
-        Marvel Rivals Player Lookup
-      </h1>
-      <form action="/api/search" method="GET" className="w-full max-w-md mb-12">
-        <div className="flex space-x-2">
-          <Input
-            type="text"
-            name="username"
-            placeholder="Enter username"
-            className="flex-grow"
-            required
-          />
-          <Button type="submit">Search</Button>
-        </div>
-      </form>
+      {/* Search Form (Now Uses Client Component) */}
+      <h1 className="text-4xl font-bold mb-8 text-red-500">Marvel Rivals Player Lookup</h1>
+      <SearchBar />
 
       {/* Display Highest-Rated Players */}
       <section className="w-full max-w-md">
