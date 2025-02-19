@@ -112,8 +112,8 @@ export default async function PlayerPage({ params }: { params: { username: strin
       <Card className="bg-gray-800 text-white w-full max-w-2xl">
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Avatar className="h-8 w-8">
-              <AvatarFallback>
+            <Avatar className="h-8 w-8 bg-gray-800">
+              <AvatarFallback className="bg-gray-800 text-white">
                 <User className="h-4 w-4" />
               </AvatarFallback>
             </Avatar>
