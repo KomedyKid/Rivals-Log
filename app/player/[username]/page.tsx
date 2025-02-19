@@ -35,8 +35,11 @@ type Comment = {
 }
 
 async function getPlayerData(username: string) {
+  // Decode the URL-encoded username
+  const decodedUsername = decodeURIComponent(username)
+
   const player = await prisma.players.findUnique({
-    where: { username },
+    where: { username: decodedUsername },
   })
 
   if (!player) return null
