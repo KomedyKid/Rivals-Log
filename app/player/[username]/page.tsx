@@ -2,38 +2,85 @@ import { notFound } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import CommentsDialog from "@/components/comments-dialog"
+
+type HeroStat = {
+  player_id: number
+  hero_id: number
+  hero_name: string
+  total_reports: number
+  avg_rating: number
+  lord_reports: number
+  lord_status: string
+}
+
+type RawComment = {
+  hero_id: number
+  comment: string
+  reported_at: Date
+  rating: number
+  hero_name: string
+}
+
+type Comment = {
+  hero_id: number
+  comment: string
+  reported_at: Date
+  rating: number
+  hero: {
+    hero_name: string
+  }
+}
 
 async function getPlayerData(username: string) {
   const player = await prisma.players.findUnique({
     where: { username },
-    include: {
-      reports: {
-        include: {
-          heroes: true,
-          players: true,
-        },
-      },
-      lord_reports: {
-        include: {
-          heroes: true,
-        },
-      },
-    },
-  });
-  
+  })
 
   if (!player) return null
 
-  const heroStats = await prisma.$queryRaw<
-  Array<{ hero_id: number; total_reports: bigint; avg_rating: number; lord_reports: bigint; lord_status: string }>
->`
-  SELECT hero_id, total_reports, avg_rating, lord_reports, lord_status 
-  FROM player_hero_stats 
-  WHERE player_id = ${player.player_id}
-`;
+  // Get hero stats with hero names using raw SQL
+  const heroStats = await prisma.$queryRaw<HeroStat[]>`
+    SELECT 
+      phs.player_id,
+      phs.hero_id,
+      h.hero_name,
+      phs.total_reports,
+      phs.avg_rating,
+      phs.lord_reports,
+      phs.lord_status
+    FROM player_hero_stats phs
+    JOIN heroes h ON h.hero_id = phs.hero_id
+    WHERE phs.player_id = ${player.player_id}
+  `
 
+  // Get comments for each hero
+  const rawComments = await prisma.$queryRaw<RawComment[]>`
+    SELECT 
+      r.hero_id,
+      r.comment,
+      r.reported_at,
+      r.rating,
+      h.hero_name
+    FROM reports r
+    JOIN heroes h ON h.hero_id = r.hero_id
+    WHERE r.player_id = ${player.player_id}
+    AND r.comment IS NOT NULL
+    ORDER BY r.reported_at DESC
+  `
 
-  return { player, heroStats }
+  // Transform raw comments into the expected format
+  const comments: Comment[] = rawComments.map((rawComment) => ({
+    hero_id: rawComment.hero_id,
+    comment: rawComment.comment,
+    reported_at: rawComment.reported_at,
+    rating: rawComment.rating,
+    hero: {
+      hero_name: rawComment.hero_name,
+    },
+  }))
+
+  return { player, heroStats, comments }
 }
 
 export default async function PlayerPage({ params }: { params: { username: string } }) {
@@ -43,10 +90,23 @@ export default async function PlayerPage({ params }: { params: { username: strin
     notFound()
   }
 
-  const { player, heroStats } = data
+  const { player, heroStats, comments } = data
+
+  // Group comments by hero_id
+  const commentsByHero = comments.reduce(
+    (acc, comment) => {
+      const heroId = comment.hero_id
+      if (!acc[heroId]) {
+        acc[heroId] = []
+      }
+      acc[heroId].push(comment)
+      return acc
+    },
+    {} as Record<number, Comment[]>,
+  )
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-24 bg-gradient-to-b from-gray-900 to-gray-800">
+    <main className="flex min-h-screen flex-col items-center p-8 bg-gradient-to-b from-gray-900 to-gray-800">
       <h1 className="text-4xl font-bold mb-8 text-red-500">Marvel Rivals Player: {player.username}</h1>
       <Card className="bg-gray-800 text-white w-full max-w-2xl">
         <CardHeader>
@@ -56,15 +116,18 @@ export default async function PlayerPage({ params }: { params: { username: strin
           <h2 className="text-xl font-semibold mb-4">Hero Statistics</h2>
           <div className="grid gap-4">
             {heroStats.map((stat) => (
-              <div key={stat.hero_id} className="bg-gray-700 p-4 rounded-lg">
-                <h3 className="text-lg font-semibold mb-2">{stat.hero_id}</h3>
-                <div className="grid grid-cols-2 gap-2">
+              <div key={stat.hero_id} className="bg-gray-700/50 p-4 rounded-lg">
+                <div className="flex justify-between items-start mb-3">
+                  <h3 className="text-xl font-semibold text-red-400">{stat.hero_name}</h3>
+                  <CommentsDialog heroName={stat.hero_name} comments={commentsByHero[stat.hero_id] || []} />
+                </div>
+                <div className="grid grid-cols-2 gap-y-2">
                   <div className="text-gray-400">Total Reports:</div>
-                  <div>{stat.total_reports}</div>
+                  <div className="font-medium">{Number(stat.total_reports) || 0}</div>
                   <div className="text-gray-400">Average Rating:</div>
-                  <div>{stat.avg_rating.toFixed(2)}</div>
+                  <div className="font-medium">{Number(stat.avg_rating).toFixed(2)}</div>
                   <div className="text-gray-400">Lord Reports:</div>
-                  <div>{stat.lord_reports}</div>
+                  <div className="font-medium">{Number(stat.lord_reports) || 0}</div>
                   <div className="text-gray-400">Lord Status:</div>
                   <div>
                     <Badge
@@ -86,6 +149,9 @@ export default async function PlayerPage({ params }: { params: { username: strin
                 </div>
               </div>
             ))}
+            {heroStats.length === 0 && (
+              <div className="text-center py-4 text-gray-400">No hero statistics available for this player</div>
+            )}
           </div>
         </CardContent>
       </Card>

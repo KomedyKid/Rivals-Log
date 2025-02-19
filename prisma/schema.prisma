@@ -1,6 +1,5 @@
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["views"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -9,51 +8,50 @@ datasource db {
   directUrl = env("POSTGRES_URL_NON_POOLING")
 }
 
-model heroes {
-  hero_id      Int            @id @default(autoincrement())
-  hero_name    String         @unique @db.VarChar(100)
-  lord_reports lord_reports[]
-  reports      reports[]
+model Player {
+  player_id    Int           @id @default(autoincrement())
+  username     String        @unique
+  reports      Report[]
+  lord_reports LordReport[]
 }
 
-model lord_reports {
-  lord_report_id Int       @id @default(autoincrement())
-  player_id      Int?
-  hero_id        Int?
-  user_ip        String    @db.VarChar(45)
-  reported_at    DateTime? @default(now()) @db.Timestamp(6)
-  heroes         heroes?   @relation(fields: [hero_id], references: [hero_id], onDelete: Cascade, onUpdate: NoAction)
-  players        players?  @relation(fields: [player_id], references: [player_id], onDelete: Cascade, onUpdate: NoAction)
+model Hero {
+  hero_id      Int           @id @default(autoincrement())
+  hero_name    String        @unique
+  reports      Report[]
+  lord_reports LordReport[]
 }
 
-model players {
-  player_id    Int            @id @default(autoincrement())
-  username     String         @unique @db.VarChar(50)
-  lord_reports lord_reports[]
-  reports      reports[]
-}
-
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-model reports {
-  report_id   Int       @id @default(autoincrement())
-  player_id   Int?
-  hero_id     Int?
-  rating      Int?
+model Report {
+  report_id   Int      @id @default(autoincrement())
+  player      Player   @relation(fields: [player_id], references: [player_id], onDelete: Cascade)
+  player_id   Int
+  hero        Hero     @relation(fields: [hero_id], references: [hero_id], onDelete: Cascade)
+  hero_id     Int
+  rating      Int
   comment     String?
-  reported_at DateTime? @default(now()) @db.Timestamp(6)
-  user_ip     String    @db.VarChar(45)
-  heroes      heroes?   @relation(fields: [hero_id], references: [hero_id], onDelete: Cascade, onUpdate: NoAction)
-  players     players?  @relation(fields: [player_id], references: [player_id], onDelete: Cascade, onUpdate: NoAction)
+  reported_at DateTime @default(now())
+  user_ip     String   @db.VarChar(45)
 }
 
-/// The underlying view does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-view player_hero_stats {
-  player_id     Int?
-  hero_id       Int?
-  total_reports BigInt?
-  avg_rating    Decimal? @db.Decimal
-  lord_reports  BigInt?
-  lord_status   String?
-
-  @@ignore
+model LordReport {
+  lord_report_id Int      @id @default(autoincrement())
+  player         Player   @relation(fields: [player_id], references: [player_id], onDelete: Cascade)
+  player_id      Int
+  hero           Hero     @relation(fields: [hero_id], references: [hero_id], onDelete: Cascade)
+  hero_id        Int
+  user_ip        String   @db.VarChar(45)
+  reported_at    DateTime @default(now())
 }
+
+view PlayerHeroStats {
+  player_id     Int
+  hero_id       Int
+  total_reports Int
+  avg_rating    Float    @default(0)
+  lord_reports  Int
+  lord_status   String
+
+  @@unique([player_id, hero_id])
+}
+
