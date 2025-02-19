@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import CommentsDialog from "@/components/comments-dialog"
+import { ReportForm } from "@/components/report-form"
 import { User } from "lucide-react"
 
 type HeroStat = {
@@ -74,6 +75,11 @@ async function getPlayerData(username: string) {
     ORDER BY r.reported_at DESC
   `
 
+  // Get all heroes for the report form
+  const heroes = await prisma.heroes.findMany({
+    select: { hero_id: true, hero_name: true},
+  })
+
   // Transform raw comments into the expected format
   const comments: Comment[] = rawComments.map((rawComment) => ({
     hero_id: rawComment.hero_id,
@@ -85,7 +91,8 @@ async function getPlayerData(username: string) {
     },
   }))
 
-  return { player, heroStats, comments }
+
+  return { player, heroStats, comments, heroes }
 }
 
 export default async function PlayerPage({ params }: { params: { username: string } }) {
@@ -95,7 +102,7 @@ export default async function PlayerPage({ params }: { params: { username: strin
     notFound()
   }
 
-  const { player, heroStats, comments } = data
+  const { player, heroStats, comments, heroes } = data
 
   const commentsByHero = comments.reduce(
     (acc, comment) => {
@@ -115,12 +122,15 @@ export default async function PlayerPage({ params }: { params: { username: strin
       <Card className="bg-gray-800 text-white w-full max-w-2xl">
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Avatar className="h-8 w-8 bg-gray-800">
-              <AvatarFallback className="bg-gray-800 text-white">
-                <User className="h-4 w-4" />
-              </AvatarFallback>
-            </Avatar>
-            <CardTitle className="text-2xl">{player.username}</CardTitle>
+            <div className="flex items-center justify-between">
+              <Avatar className="h-8 w-8 bg-gray-800">
+                <AvatarFallback className="bg-gray-800 text-white">
+                  <User className="h-4 w-4" />
+                </AvatarFallback>
+              </Avatar>
+              <CardTitle className="text-2xl">{player.username}</CardTitle>
+            </div>
+            <ReportForm username={player.username} heroes={heroes} />
           </div>
         </CardHeader>
         <CardContent>
