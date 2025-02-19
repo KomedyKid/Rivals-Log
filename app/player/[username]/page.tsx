@@ -2,7 +2,9 @@ import { notFound } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import CommentsDialog from "@/components/comments-dialog"
+import { User } from "lucide-react"
 
 type HeroStat = {
   player_id: number
@@ -92,7 +94,6 @@ export default async function PlayerPage({ params }: { params: { username: strin
 
   const { player, heroStats, comments } = data
 
-  // Group comments by hero_id
   const commentsByHero = comments.reduce(
     (acc, comment) => {
       const heroId = comment.hero_id
@@ -110,7 +111,14 @@ export default async function PlayerPage({ params }: { params: { username: strin
       <h1 className="text-4xl font-bold mb-8 text-red-500">Marvel Rivals Player: {player.username}</h1>
       <Card className="bg-gray-800 text-white w-full max-w-2xl">
         <CardHeader>
-          <CardTitle className="text-2xl">{player.username}</CardTitle>
+          <div className="flex items-center gap-2">
+            <Avatar className="h-8 w-8">
+              <AvatarFallback>
+                <User className="h-4 w-4" />
+              </AvatarFallback>
+            </Avatar>
+            <CardTitle className="text-2xl">{player.username}</CardTitle>
+          </div>
         </CardHeader>
         <CardContent>
           <h2 className="text-xl font-semibold mb-4">Hero Statistics</h2>
@@ -118,7 +126,13 @@ export default async function PlayerPage({ params }: { params: { username: strin
             {heroStats.map((stat) => (
               <div key={stat.hero_id} className="bg-gray-700/50 p-4 rounded-lg">
                 <div className="flex justify-between items-start mb-3">
-                  <h3 className="text-xl font-semibold text-red-400">{stat.hero_name}</h3>
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={`/heroes/${stat.hero_id}.png`} alt={stat.hero_name} />
+                      <AvatarFallback>{stat.hero_name[0]}</AvatarFallback>
+                    </Avatar>
+                    <h3 className="text-xl font-semibold text-red-400">{stat.hero_name}</h3>
+                  </div>
                   <CommentsDialog heroName={stat.hero_name} comments={commentsByHero[stat.hero_id] || []} />
                 </div>
                 <div className="grid grid-cols-2 gap-y-2">
