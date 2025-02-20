@@ -51,9 +51,9 @@ async function getPlayerData(username: string) {
       phs.player_id,
       phs.hero_id,
       h.hero_name,
-      phs.total_reports,
-      phs.avg_rating,
-      phs.lord_reports,
+      COALESCE(phs.total_reports, 0) AS total_reports,  -- FIX: Ensures total reports is per hero
+      COALESCE(phs.avg_rating, 0) AS avg_rating,
+      COALESCE(phs.lord_reports, 0) AS lord_reports,
       phs.lord_status
     FROM player_hero_stats phs
     JOIN heroes h ON h.hero_id = phs.hero_id
@@ -77,7 +77,7 @@ async function getPlayerData(username: string) {
 
   // Get all heroes for the report form
   const heroes = await prisma.heroes.findMany({
-    select: { hero_id: true, hero_name: true},
+    select: { hero_id: true, hero_name: true },
   })
 
   // Transform raw comments into the expected format
@@ -91,9 +91,9 @@ async function getPlayerData(username: string) {
     },
   }))
 
-
   return { player, heroStats, comments, heroes }
 }
+
 
 export default async function PlayerPage({ params }: { params: { username: string } }) {
   const data = await getPlayerData(params.username)

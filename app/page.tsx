@@ -8,7 +8,6 @@ type TopPlayer = {
   avg_rating: number
 }
 
-// Utility function to get top players (remains server-side)
 async function getTopPlayers(limit = 5): Promise<TopPlayer[]> {
   const topPlayers = await prisma.$queryRaw<TopPlayer[]>`
     SELECT p.player_id,
@@ -28,14 +27,25 @@ export default async function Home() {
   const topPlayers = await getTopPlayers(5)
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-24 bg-gradient-to-b from-gray-900 to-gray-800">
-      {/* Search Form (Now Uses Client Component) */}
-      <h1 className="text-4xl font-bold mb-8 text-red-500">Marvel Rivals Player Lookup</h1>
-      <SearchBar />
+    <main className="flex flex-col items-center justify-center min-h-screen p-4 bg-gradient-to-b from-gray-900 to-gray-800">
+      {/* Title Section */}
+      <div className="text-center mb-3">
+        <h1 className="text-5xl font-bold mb-2 bg-gradient-to-r from-red-500 via-red-400 to-red-500 text-transparent bg-clip-text tracking-tight">
+          Rivals Log
+        </h1>
+        <p className="text-gray-400 font-medium tracking-wide">
+          Unmask Your Opponents
+        </p>
+      </div>
 
-      {/* Display Highest-Rated Players */}
+      {/* Search Bar */}
+      <div className="w-full mb-4 flex justify-center">
+        <SearchBar />
+      </div>
+
+      {/* Highest Rated Players */}
       <section className="w-full max-w-md">
-        <h2 className="text-2xl font-semibold text-white mb-4">
+        <h2 className="text-2xl font-semibold text-white mb-2">
           Highest Rated Players
         </h2>
         {topPlayers.length > 0 ? (
@@ -43,11 +53,11 @@ export default async function Home() {
             {topPlayers.map((player) => (
               <li
                 key={player.player_id}
-                className="flex justify-between items-center bg-gray-800 p-3 rounded-md"
+                className="flex justify-between items-center bg-gray-800/50 backdrop-blur-sm p-3 rounded-md hover:bg-gray-800/70 transition-colors"
               >
                 <Link
                   href={`/player/${encodeURIComponent(player.username)}`}
-                  className="text-white font-medium hover:text-blue-400"
+                  className="text-white font-medium hover:text-red-400 transition-colors"
                 >
                   {player.username}
                 </Link>

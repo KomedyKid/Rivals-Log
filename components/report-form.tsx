@@ -34,9 +34,14 @@ interface ReportFormProps {
 export function ReportForm({ username, heroes, isNewPlayer = false }: ReportFormProps) {
   const [open, setOpen] = useState(false)
   const [isLord, setIsLord] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
+
+    // Disable the button right away
+    setIsSubmitting(true)
+
     const formData = new FormData(event.currentTarget)
 
     try {
@@ -44,15 +49,20 @@ export function ReportForm({ username, heroes, isNewPlayer = false }: ReportForm
         method: "POST",
         body: formData,
       })
-
       const data = await response.json()
+
       if (data.success) {
+        // If the request is successful, you can close the dialog
         setOpen(false)
       } else {
         console.error("Error:", data.error)
+        // Re-enable the button so user can try again
+        setIsSubmitting(false)
       }
     } catch (error) {
       console.error("Something went wrong", error)
+      // Re-enable the button on error
+      setIsSubmitting(false)
     }
   }
 
@@ -158,8 +168,13 @@ export function ReportForm({ username, heroes, isNewPlayer = false }: ReportForm
             </Label>
           </div>
 
-          <Button type="submit" className="bg-gray-700 text-white hover:bg-gray-600">
-            Submit Report
+          {/* Disable the button while isSubmitting is true */}
+          <Button
+            type="submit"
+            disabled={isSubmitting}
+            className="bg-gray-700 text-white hover:bg-gray-600"
+          >
+            {isSubmitting ? "Submitting..." : "Submit Report"}
           </Button>
         </form>
       </DialogContent>
