@@ -3,7 +3,7 @@
 **Rivals Log**  
 **_Unmask Your Opponents._**  
 
-![Rivals Log Banner](https://image-url.com) *(Optional: Add a banner image for branding)*  
+![Rivals Log Banner](banner.png) 
 
 ---
 
